@@ -10,6 +10,12 @@ html(lang="en")
     header 
       h1 Start Zoom!!!!
     main 
-      h2 Welcome to Zoom
-    button Call
+      ul
+      form#nick
+          input(type="text", placeholder="Nic name", required)
+          button Save 
+      ul
+      form#message
+        input(type="text", placeholder="Write a msg", required)
+        button Send 
     script(src="/public/js/app.js") 

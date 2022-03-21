@@ -22,16 +22,28 @@ app.get("*", handleRedirect);
 
 const server = http.createServer(app); //http 서버
 const wss = new WebSocket.Server({ server }); // http 서버에 WebSocket으로 랜더링 하기 위해서
-
+const socketsDb = [];
 wss.on("connection", (socket) => {
+  socketsDb.push(socket);
+  socket["nickname"] = "Anon";
   // FronEnd에서 정보가 socket이라는 변수로 전달됨, 서버에 socket은 연결된 브라우저 즉 frontend
   socket.on("close", () => {
     console.log("Client Die");
   });
   socket.on("message", (clientMessage) => {
-    console.log(clientMessage.toString());
+    const parsed = JSON.parse(clientMessage);
+    // console.log(parsed, clientMessage.toString());
+    if (parsed.type === "new_message") {
+      socketsDb.forEach((socketdb) =>
+        socketdb.send(`${socket.nickname}: ${parsed.payload}`)
+      );
+    } else if (parsed.type === "nickname") {
+      // socketsDb.forEach((socketdb) => socketdb.send(parsed.payload));
+      socket["nickname"] = parsed.payload;
+      // console.log(socket);
+    }
   });
-  socket.send("Server Send"); //Server에서 메세지 보내기
+  // socket.send("Server Send"); //Server에서 메세지 보내기
 });
 server.listen(PORT, () => {
   console.log(`Server Start http://localhost:${PORT}`);
