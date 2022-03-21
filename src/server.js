@@ -1,6 +1,7 @@
 import express from "express";
 import WebSocket from "ws";
 import http from "http";
+import { copyFileSync } from "fs";
 
 const app = express();
 
@@ -21,11 +22,17 @@ app.get("*", handleRedirect);
 
 const server = http.createServer(app); //http 서버
 const wss = new WebSocket.Server({ server }); // http 서버에 WebSocket으로 랜더링 하기 위해서
-function handleConnection(socket) {
+
+wss.on("connection", (socket) => {
   // FronEnd에서 정보가 socket이라는 변수로 전달됨, 서버에 socket은 연결된 브라우저 즉 frontend
-  console.log(socket);
-}
-wss.on("connection", handleConnection);
+  socket.on("close", () => {
+    console.log("Client Die");
+  });
+  socket.on("message", (clientMessage) => {
+    console.log(clientMessage.toString());
+  });
+  socket.send("Server Send"); //Server에서 메세지 보내기
+});
 server.listen(PORT, () => {
   console.log(`Server Start http://localhost:${PORT}`);
 });
