@@ -2,6 +2,7 @@ import express from "express";
 // import WebSocket from "ws";
 import http from "http";
 import SocketIO from "socket.io";
+import { instrument } from "@socket.io/admin-ui";
 const app = express();
 
 const PORT = 4000;
@@ -22,7 +23,22 @@ app.get("*", handleRedirect);
 const httpServer = http.createServer(app); //http 서버
 const socketIoServer = SocketIO(httpServer);
 
+function publicRooms() {
+  const sids = socketIoServer.sockets.adapter.sids;
+  const rooms = socketIoServer.sockets.adapter.rooms;
+  const publicRooms = [];
+  rooms.forEach((_, key) => {
+    if (sids.get(key) === undefined) {
+      publicRooms.push(key);
+    }
+  });
+  return publicRooms;
+}
+function countRoom(roomName) {
+  return socketIoServer.sockets.adapter.rooms.get(roomName)?.size;
+}
 socketIoServer.on("connection", (socketio) => {
+  socketio["nickname"] = "Anon";
   // console.log(socketio);
   socketio.onAny((event) => {
     console.log(event);
@@ -32,7 +48,25 @@ socketIoServer.on("connection", (socketio) => {
     socketio.join(roomName);
     console.log(socketio.rooms);
     done();
-    socketio.to(roomName).emit("welcome");
+    socketio
+      .to(roomName)
+      .emit("welcome", socketio.nickname, countRoom(roomName));
+    socketIoServer.sockets.emit("room_change", publicRooms());
+  });
+  socketio.on("disconnecting", () => {
+    socketio.rooms.forEach((room) => {
+      socketio.to(room).emit("bye", socketio.nickname, countRoom(room) - 1);
+    });
+    socketio.on("disconnecting", () => {
+      socketIoServer.sockets.emit("room_change", publicRooms());
+    });
+  });
+  socketio.on("new_message", (message, room, done) => {
+    socketio.to(room).emit("new_message", `${socketio.nickname}:${message}`);
+    done();
+  });
+  socketio.on("nickname", (nickname) => {
+    socketio["nickname"] = nickname;
   });
 });
 

@@ -11,13 +11,19 @@ html(lang="en")
       h1 Start Socket.io Zoom!!!!
     main 
       div#welcome 
-       form(action="")
-        input(type="text", placeholder="Room Name", required) 
-        button Enter Room
+        
+        form(action="")
+          input(type="text", placeholder="Room Name", required) 
+          button Enter Room
+        h3 Open Room :
+        ul
       div#room 
         h3
         ul 
-        form(action="")
+        form#name 
+          input(type="text", placeholder="Nick Name", required) 
+          button Save
+        form#message
           input(type="text", placeholder="Message", required) 
           button Send
     script(src="/socket.io/socket.io.js") 
